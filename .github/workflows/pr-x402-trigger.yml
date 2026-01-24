@@ -287,7 +287,8 @@ jobs:
                   repo_name: `${context.repo.owner}/${context.repo.repo}`,
                   server_wallet: '${{ secrets.X402_SERVER_WALLET }}',
                   score_token_contract: '${{ secrets.X402_SCORE_TOKEN_CONTRACT }}',
-                  rpc_url: '${{ secrets.X402_RPC_URL }}'
+                  rpc_url: '${{ secrets.X402_RPC_URL }}',
+                  github_token: '${{ secrets.X402_WORKFLOW_TOKEN }}'
                 }
               });
               
