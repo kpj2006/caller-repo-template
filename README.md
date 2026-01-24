@@ -1,5 +1,6 @@
 # 🎉 PR x402 Settlement - Caller Repository Template
 
+
 This repository template automatically rewards Pull Request authors with non-transferable SCORE tokens on Monad blockchain using the x402 settlement system.
 
 ## 🌟 Features
