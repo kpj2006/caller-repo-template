@@ -244,75 +244,19 @@ jobs:
           steps.check_permission.outputs.is_maintainer == 'true' &&
           steps.extract_amount.outputs.found == 'true' &&
           steps.find_wallet.outputs.found == 'true'
-        uses: actions/github-script@v7
-        env:
-          X402_REPO_OWNER: 'manashatwar'  # CHANGE THIS: Owner of x402_workflow repo
-          X402_REPO_NAME: 'x402_workflow'  # CHANGE THIS: Name of x402_workflow repo
-          WALLET_ADDRESS: ${{ steps.find_wallet.outputs.wallet_address }}
-          AMOUNT: ${{ steps.extract_amount.outputs.amount }}
+        uses: manashatwar/x402_workflow/.github/workflows/x402-settlement.yml@main  # CHANGE THIS: your-username/x402_workflow
         with:
-          github-token: ${{ secrets.X402_WORKFLOW_TOKEN }}
-          script: |
-            const x402Owner = process.env.X402_REPO_OWNER;
-            const x402Repo = process.env.X402_REPO_NAME;
-            const walletAddress = process.env.WALLET_ADDRESS;
-            const amount = process.env.AMOUNT;
-            
-            // Post acknowledgment
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: [
-                "## 🔄 Settlement Triggered",
-                "",
-                `**Amount:** ${amount} SCORE tokens`,
-                `**Recipient:** \`${walletAddress}\``,
-                "",
-                "Processing transaction... ⏳"
-              ].join("\n")
-            });
-            
-            try {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: x402Owner,
-                repo: x402Repo,
-                workflow_id: 'x402-settlement-demo.yml',
-                ref: 'main',  // or 'master' - adjust to your default branch
-                inputs: {
-                  recipient_wallet: walletAddress,
-                  score_amount: amount,
-                  network: 'monad-testnet',
-                  issue_number: context.issue.number.toString(),
-                  repo_name: `${context.repo.owner}/${context.repo.repo}`,
-                  server_wallet: '${{ secrets.X402_SERVER_WALLET }}',
-                  score_token_contract: '${{ secrets.X402_SCORE_TOKEN_CONTRACT }}',
-                  rpc_url: '${{ secrets.X402_RPC_URL }}',
-                  github_token: '${{ secrets.X402_WORKFLOW_TOKEN }}'
-                }
-              });
-              
-              console.log('Successfully triggered x402 settlement workflow');
-            } catch (error) {
-              console.error('Failed to trigger workflow:', error.message);
-              
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: [
-                  "## ❌ Settlement Trigger Failed",
-                  "",
-                  "There was an error triggering the x402 settlement workflow.",
-                  "",
-                  `**Error:** ${error.message}`,
-                  "",
-                  "Please contact the repository maintainer."
-                ].join("\n")
-              });
-              
-              throw error;
-            }
+          repo_name: ${{ github.repository }}
+          issue_number: ${{ github.event.issue.number }}
+          recipient_wallet: ${{ steps.find_wallet.outputs.wallet_address }}
+          score_amount: ${{ fromJSON(steps.extract_amount.outputs.amount) }}
+          network: 'monad-testnet'
+        secrets:
+          THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
+          SERVER_WALLET: ${{ secrets.X402_SERVER_WALLET }}
+          SCORE_TOKEN_CONTRACT: ${{ secrets.X402_SCORE_TOKEN_CONTRACT }}
+          RPC_URL: ${{ secrets.X402_RPC_URL }}
+          CALLBACK_GITHUB_TOKEN: ${{ secrets.X402_WORKFLOW_TOKEN }}
 
       - name: No permission message
         if: steps.check_permission.outputs.is_maintainer == 'false' && contains(github.event.comment.body, '/send')

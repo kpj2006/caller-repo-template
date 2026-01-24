@@ -26,33 +26,28 @@ cp -r caller-repo-template/.github/workflows /path/to/your/repo/.github/
 
 Edit `.github/workflows/pr-x402-trigger.yml`:
 
-**Line 97**: Change repository owner
+**Line 247**: Change repository reference
 ```yaml
-X402_REPO_OWNER: 'YOUR_GITHUB_USERNAME'  # Change this!
-```
-
-**Line 98**: Change repository name
-```yaml
-X402_REPO_NAME: 'x402_workflow'  # Change if different
-```
-
-**Line 102**: Verify your default branch
-```yaml
-ref: 'main',  # Change to 'master' if needed
+uses: YOUR_USERNAME/x402_workflow/.github/workflows/x402-settlement.yml@main  # Change YOUR_USERNAME!
 ```
 
 ### 3️⃣ Add Secrets (2 minutes)
 
 Go to: **Your Repo → Settings → Secrets → Actions → New repository secret**
 
-Add these 4 secrets:
+Add these 5 secrets:
 
 ```
-X402_WORKFLOW_TOKEN      = ghp_your_token_here
-X402_SERVER_WALLET       = 0x_your_private_key
+X402_WORKFLOW_TOKEN       = ghp_your_token_here
+X402_SERVER_WALLET        = 0x_your_private_key
 X402_SCORE_TOKEN_CONTRACT = 0x_contract_address  
-X402_RPC_URL             = https://testnet.monad.xyz
+X402_RPC_URL              = https://testnet.monad.xyz
+THIRDWEB_SECRET_KEY       = your_thirdweb_secret_key
 ```
+
+**Important:** Also add `CALLBACK_GITHUB_TOKEN` to your x402_workflow repository:
+- Go to: x402_workflow repo → Settings → Secrets → Actions
+- Add: `CALLBACK_GITHUB_TOKEN = ghp_your_token_here` (can be same as X402_WORKFLOW_TOKEN)
 
 ### 4️⃣ Test It! (1 minute)
 
@@ -112,9 +107,9 @@ x402-wallet: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 1. PR author must submit wallet first
 2. Wallet must be in format: `x402-wallet: 0x...`
-3. Must be commented by the PR author (not co-authors)
-
-### "Failed to trigger workflow"?
+3. Must be commethe `uses:` line in pr-x402-trigger.yml (line 247)
+3. Ensure x402-settlement.yml exists in x402_workflow repo
+4. Ensure CALLBACK_GITHUB_TOKEN is set in x402_workflow repository
 
 1. Verify `X402_WORKFLOW_TOKEN` has `workflow` scope
 2. Double-check `X402_REPO_OWNER` and `X402_REPO_NAME`
@@ -168,13 +163,14 @@ You'll know it's working when:
 
 ## 🚨 Common Mistakes
 
-1. ❌ Forgetting to change `X402_REPO_OWNER` in workflow file
-2. ❌ Using wrong branch name in `ref:` field
+1. ❌ Forgetting to change `YOUR_USERNAME` in the `uses:` line (line 247)
+2. ❌ Not setting `CALLBACK_GITHUB_TOKEN` in x402_workflow repository
 3. ❌ Token without `workflow` scope
 4. ❌ Non-maintainer trying to use `/send` command
 5. ❌ Wrong wallet format (missing `x402-wallet:` prefix)
 6. ❌ Using `/send` before PR author submits wallet
 7. ❌ Forgetting space in `/send 100` (must be `/send 100` not `/send100`)
+8. ❌ Using x402-settlement-demo.yml instead of x402-settlement.yml (demo is for manual testing only)
 
 ## 🎊 You're Ready!
 
