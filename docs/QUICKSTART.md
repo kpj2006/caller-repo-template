@@ -1,6 +1,6 @@
 # 🚀 Quick Start Guide
 
-Get your PR x402 settlement system running in 5 minutes!
+Get your maintainer-controlled PR x402 settlement system running in 5 minutes!
 
 ## ⚡ Prerequisites Checklist
 
@@ -26,10 +26,14 @@ cp -r caller-repo-template/.github/workflows /path/to/your/repo/.github/
 
 Edit `.github/workflows/pr-x402-trigger.yml`:
 
-**Line 97-98**: Change repository details
+**Line 97**: Change repository owner
 ```yaml
 X402_REPO_OWNER: 'YOUR_GITHUB_USERNAME'  # Change this!
-X402_REPO_NAME: 'x402_workflow'           # Change if different
+```
+
+**Line 98**: Change repository name
+```yaml
+X402_REPO_NAME: 'x402_workflow'  # Change if different
 ```
 
 **Line 102**: Verify your default branch
@@ -60,28 +64,62 @@ X402_RPC_URL             = https://testnet.monad.xyz
 
 ## 🎬 What Happens Next?
 
-After you comment with your wallet:
+### For Contributors:
 
-1. **Instant**: "✅ Wallet Address Saved!" message
-2. **Wait**: Maintainer reviews your PR
-3. **Maintainer approval**: Maintainer comments `/send 100` (or another amount)
-4. **~30 seconds**: x402 settlement workflow triggers in x402_workflow repo
-5. **~1-2 minutes**: Token minting on Monad
-6. **Result**: "🎉 Settlement Completed!" message with transaction hash
+1. **Open PR**: Create your pull request
+2. **Get Welcome**: Bot asks for your wallet address
+3. **Submit Wallet**: Comment `x402-wallet: 0xYourAddress`
+4. **Wait for Review**: Maintainer reviews your PR
+5. **Receive Tokens**: When maintainer approves with `/send <amount>`
+
+### For Maintainers:
+
+1. **Review PR**: Check code quality and impact
+2. **Verify Wallet**: PR author should have already submitted wallet
+3. **Send Tokens**: Comment `/send 100` (or any amount you choose)
+4. **Confirmation**: ~1-2 minutes later, success message with TX hash
+
+## 📝 Command Reference
+
+### For PR Authors (Contributors)
+```
+x402-wallet: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+```
+
+### For Maintainers (NEW!)
+```
+/send 50      # Small fixes, docs
+/send 100     # Bug fixes, minor features
+/send 200     # Medium features
+/send 500     # Major features
+```
 
 ## 🐛 Quick Troubleshooting
 
 ### Nothing happens after commenting wallet?
 
-1. Check if you're the PR author (only PR authors can trigger)
+1. Wallet is saved - this is correct! Wait for maintainer approval
 2. Verify wallet format: `x402-wallet: 0x...` (exactly)
-3. Check Actions tab for error logs
+3. Check you're the PR author (not someone else)
+
+### "Permission Denied" when using /send?
+
+1. Only maintainers with write/admin access can use `/send`
+2. Verify you have proper permissions in repository settings
+3. Check you're in the correct repository
+
+### "No Wallet Address Found" when using /send?
+
+1. PR author must submit wallet first
+2. Wallet must be in format: `x402-wallet: 0x...`
+3. Must be commented by the PR author (not co-authors)
 
 ### "Failed to trigger workflow"?
 
 1. Verify `X402_WORKFLOW_TOKEN` has `workflow` scope
 2. Double-check `X402_REPO_OWNER` and `X402_REPO_NAME`
 3. Ensure x402-settlement-demo.yml exists in x402_workflow repo
+4. Check the `ref` branch name is correct
 
 ### Workflow triggers but settlement fails?
 
@@ -96,53 +134,64 @@ Before going live:
 
 - [ ] Tested on a private/test repository first
 - [ ] Verified all secrets are correct
-- [ ] Tested with a real wallet address
+- [ ] Tested wallet submission as PR author
+- [ ] Tested `/send` command as maintainer
 - [ ] Checked transaction on Monad explorer
 - [ ] Using testnet (not mainnet yet!)
-- [ ] Customized welcome message (optional)
-- [ ] Set appropriate token amount
+- [ ] Defined your token reward scale
+- [ ] Updated CONTRIBUTING.md with reward info (optional)
 
 ## 🎓 Learning Resources
 
-- [Full README](README.md) - Complete documentation
+- [Maintainer Guide](../MAINTAINER_GUIDE.md) - How to use `/send` command
+- [Workflow Update](../WORKFLOW_UPDATE.md) - What changed in the new system
 - [x402_workflow](https://github.com/manashatwar/x402_workflow) - Settlement engine
-- [Monad Testnet](https://testnet.monad.xyz) - Test network explorer
+- [Monad Testnet](https://testnet.monad.xyz) - Test network
 
 ## 💡 Pro Tips
 
 1. **Test First**: Always test on testnet before mainnet
-2. **Small Amounts**: Start with small token amounts (10-100)
+2. **Define Scale**: Document your token amounts (25 for docs, 100 for bugs, etc.)
 3. **Monitor Gas**: Keep server wallet funded with MON
-4. **Custom Messages**: Personalize the welcome message for your project
-5. **PR Templates**: Add instructions in your PR template
+4. **Be Consistent**: Use similar amounts for similar contributions
+5. **Communicate**: Tell contributors about the reward system in CONTRIBUTING.md
 
 ## 🎉 Success Indicators
 
 You'll know it's working when:
 
 ✅ PR opened → Welcome message appears  
-✅ Wallet commented → Acknowledgment message  
-✅ 1-2 minutes → Settlement success message with TX hash  
+✅ Wallet commented → "Wallet Address Saved!" message  
+✅ Maintainer uses `/send` → "Settlement Triggered" message
+✅ 1-2 minutes → "Settlement Completed!" with TX hash  
 ✅ Wallet shows new tokens on Monad network  
 
 ## 🚨 Common Mistakes
 
-1. ❌ Forgetting to change `X402_REPO_OWNER`
-2. ❌ Using wrong branch name in `ref:`
+1. ❌ Forgetting to change `X402_REPO_OWNER` in workflow file
+2. ❌ Using wrong branch name in `ref:` field
 3. ❌ Token without `workflow` scope
-4. ❌ Commenting from different account than PR author
+4. ❌ Non-maintainer trying to use `/send` command
 5. ❌ Wrong wallet format (missing `x402-wallet:` prefix)
+6. ❌ Using `/send` before PR author submits wallet
+7. ❌ Forgetting space in `/send 100` (must be `/send 100` not `/send100`)
 
 ## 🎊 You're Ready!
 
-Once setup is complete, every PR author can:
-1. Open a PR
-2. Get welcomed
-3. Submit their wallet
-4. Receive tokens automatically
+Once setup is complete:
 
-**No manual intervention needed!** 🚀
+**Contributors can:**
+1. Open PRs
+2. Submit wallets
+3. Get rewarded based on quality
+
+**Maintainers can:**
+1. Review PRs thoroughly
+2. Decide appropriate rewards
+3. Use simple `/send <amount>` command
+
+**Flexible, fair, and automated!** 🚀
 
 ---
 
-Need help? Check the [Full README](README.md) or review workflow logs in the Actions tab.
+Need help? Check [MAINTAINER_GUIDE.md](../MAINTAINER_GUIDE.md) or review workflow logs in the Actions tab.
