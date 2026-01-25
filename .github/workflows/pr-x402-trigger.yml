@@ -2,7 +2,7 @@
 name: PR x402 Settlement Trigger
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
   issue_comment:
     types: [created]
@@ -10,7 +10,7 @@ on:
 jobs:
   # Job 1: Send welcome message when PR is opened
   welcome_message:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
