@@ -154,6 +154,12 @@ jobs:
       pull-requests: write
       issues: write
       contents: read
+    outputs:
+      is_maintainer: ${{ steps.check_permission.outputs.is_maintainer }}
+      amount_found: ${{ steps.extract_amount.outputs.found }}
+      wallet_found: ${{ steps.find_wallet.outputs.found }}
+      recipient_wallet: ${{ steps.find_wallet.outputs.wallet_address }}
+      score_amount: ${{ steps.extract_amount.outputs.amount }}
 
     steps:
       - name: Check if commenter is maintainer
@@ -239,27 +245,38 @@ jobs:
             core.setOutput('found', 'false');
             return { found: false };
 
-      - name: Trigger x402 settlement
-        if: |
-          steps.check_permission.outputs.is_maintainer == 'true' &&
-          steps.extract_amount.outputs.found == 'true' &&
-          steps.find_wallet.outputs.found == 'true'
-        uses: manashatwar/x402_workflow/.github/workflows/x402-settlement.yml@main  # CHANGE THIS: your-username/x402_workflow
-        with:
-          repo_name: ${{ github.repository }}
-          issue_number: ${{ github.event.issue.number }}
-          recipient_wallet: ${{ steps.find_wallet.outputs.wallet_address }}
-          score_amount: ${{ fromJSON(steps.extract_amount.outputs.amount) }}
-          network: 'monad-testnet'
-        secrets:
-          THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
-          SERVER_WALLET: ${{ secrets.X402_SERVER_WALLET }}
-          SCORE_TOKEN_CONTRACT: ${{ secrets.X402_SCORE_TOKEN_CONTRACT }}
-          RPC_URL: ${{ secrets.X402_RPC_URL }}
-          CALLBACK_GITHUB_TOKEN: ${{ secrets.X402_WORKFLOW_TOKEN }}
+  # Job 4: Trigger settlement workflow (reusable workflow call)
+  trigger_settlement:
+    needs: maintainer_send
+    if: |
+      needs.maintainer_send.outputs.is_maintainer == 'true' &&
+      needs.maintainer_send.outputs.amount_found == 'true' &&
+      needs.maintainer_send.outputs.wallet_found == 'true'
+    uses: manashatwar/x402_workflow/.github/workflows/x402-settlement.yml@main  # CHANGE THIS: your-username/x402_workflow
+    with:
+      repo_name: ${{ github.repository }}
+      issue_number: ${{ github.event.issue.number }}
+      recipient_wallet: ${{ needs.maintainer_send.outputs.recipient_wallet }}
+      score_amount: ${{ fromJSON(needs.maintainer_send.outputs.score_amount) }}
+      network: 'monad-testnet'
+    secrets:
+      THIRDWEB_SECRET_KEY: ${{ secrets.THIRDWEB_SECRET_KEY }}
+      SERVER_WALLET: ${{ secrets.X402_SERVER_WALLET }}
+      SCORE_TOKEN_CONTRACT: ${{ secrets.X402_SCORE_TOKEN_CONTRACT }}
+      RPC_URL: ${{ secrets.X402_RPC_URL }}
+      CALLBACK_GITHUB_TOKEN: ${{ secrets.X402_WORKFLOW_TOKEN }}
 
+  # Job 5: Error and status messages
+  status_messages:
+    needs: maintainer_send
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
       - name: No permission message
-        if: steps.check_permission.outputs.is_maintainer == 'false' && contains(github.event.comment.body, '/send')
+        if: needs.maintainer_send.outputs.is_maintainer == 'false' && needs.maintainer_send.result == 'success'
         uses: actions/github-script@v7
         with:
           script: |
@@ -278,9 +295,9 @@ jobs:
 
       - name: No wallet found message
         if: |
-          steps.check_permission.outputs.is_maintainer == 'true' &&
-          steps.extract_amount.outputs.found == 'true' &&
-          steps.find_wallet.outputs.found == 'false'
+          needs.maintainer_send.outputs.is_maintainer == 'true' &&
+          needs.maintainer_send.outputs.amount_found == 'true' &&
+          needs.maintainer_send.outputs.wallet_found == 'false'
         uses: actions/github-script@v7
         with:
           script: |
@@ -302,8 +319,8 @@ jobs:
 
       - name: Invalid send format message
         if: |
-          steps.check_permission.outputs.is_maintainer == 'true' &&
-          steps.extract_amount.outputs.found == 'false'
+          needs.maintainer_send.outputs.is_maintainer == 'true' &&
+          needs.maintainer_send.outputs.amount_found == 'false'
         uses: actions/github-script@v7
         with:
           script: |
