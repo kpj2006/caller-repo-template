@@ -1,140 +1,44 @@
-### Phase 1: PR Creation 
+# Visual Flow (Caller to Reusable)
 
-```
-Contributor                 GitHub                      pr-x402-trigger.yml
-     |                         |                               |
-     |─── Opens PR ──────────→ |                               |
-     |                         |─── Triggers workflow ────────→|
-     |                         |                               |
-     |                         |                        [welcome_message job]
-     |                         |                               |
-     |                         |                        Compose message
-     |                         |                               |
-     |←─ Welcome message ──────|←─── Post comment ────────────|
-     |                         |                               |
-```
+This document shows the handoff between caller workflow and reusable settlement workflow.
 
-### Phase 2: Wallet Submission 
+## Sequence
 
-```
-Contributor                 GitHub                      pr-x402-trigger.yml
-     |                         |                               |
-     |─ Comments wallet ──────→|                               |
-     |   "x402-wallet: 0x..."  |                               |
-     |                         |─── Triggers workflow ────────→|
-     |                         |                               |
-     |                         |                    [trigger_settlement job]
-     |                         |                               |
-     |                         |                        Extract address
-     |                         |                        Validate format
-     |                         |                               |
-     |←─ Acknowledgment ───────|←─── Post comment ────────────|
-     |   "Wallet received!"    |                               |
+```text
+Contributor opens PR
+  -> caller workflow posts welcome message
+
+Contributor comments wallet
+  -> format: x402-wallet: 0x...
+  -> caller workflow stores/accepts wallet
+
+Maintainer comments /send <amount>
+  -> caller workflow checks permission
+  -> caller workflow resolves recipient wallet
+  -> caller workflow dispatches reusable workflow
+
+Reusable workflow executes settlement
+  -> validate inputs
+  -> send on-chain mint transaction
+  -> produce tx hash + explorer URL
+
+Reusable workflow posts callback status
+  -> PR receives success/failure comment
 ```
 
-### Phase 3: Settlement Trigger 
+## Responsibility Split
 
-```
-pr-x402-trigger.yml         GitHub API              x402_workflow
-       |                        |                         |
-       |─── dispatch_workflow ─→|                         |
-       |    (with inputs)        |                         |
-       |                         |─── Trigger ────────────→|
-       |                         |                         |
-       |                         |           [x402-settlement-demo.yml]
-       |                         |                         |
-       |                         |                    Starts running
-```
+Caller repository:
 
-### Phase 4: Token Minting 
+- command parsing
+- permission checks
+- wallet collection UX
 
-```
-x402-settlement-demo.yml    sendScore.js           Monad Blockchain
-         |                       |                         |
-         |─── Execute ──────────→|                         |
-         |                       |                         |
-         |                  Connect wallet                 |
-         |                  Load contract                  |
-         |                       |                         |
-         |                       |─── mint() ─────────────→|
-         |                       |    (recipient, amount)  |
-         |                       |                         |
-         |                       |                    Process TX
-         |                       |                    Mint tokens
-         |                       |                         |
-         |                       |←─── TX Hash ────────────|
-         |                       |                         |
-         |←─── Return hash ──────|                         |
-```
+Reusable repository:
 
-### Phase 5: Callback 
+- blockchain transaction execution
+- network/contract validation
+- settlement output generation
 
-```
-x402-settlement-demo.yml    GitHub API              Contributor's PR
-         |                       |                         |
-         |─── Post comment ─────→|                         |
-         |    (with TX details)   |                         |
-         |                        |─── Update ─────────────→|
-         |                        |                         |
-         |                        |                   Shows success
-         |                        |                   with TX hash
-```
-
-## 🔄 Data Flow
-
-```
-User Input:
-  "x402-wallet: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-                │
-                ↓
-  Regex Extraction:
-    /x402-wallet:\s*(0x[a-fA-F0-9]{40})/i
-                │
-                ↓
-  Extracted Address:
-    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-                │
-                ↓
-  Format Validation:
-    /^0x[a-fA-F0-9]{40}$/
-                │ ✓ Valid
-                ↓
-  Workflow Dispatch Inputs:
-    {
-      recipient_wallet: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      score_amount: "100",
-      network: "monad-testnet",
-      issue_number: "42",
-      repo_name: "user/project",
-      server_wallet: "***",
-      score_token_contract: "0xFea9...",
-      rpc_url: "https://testnet.monad.xyz"
-    }
-                │
-                ↓
-  sendScore.js Execution:
-    - Connect to RPC
-    - Initialize wallet
-    - Load contract
-    - Call mint(address, amount)
-                │
-                ↓
-  Blockchain Transaction:
-    {
-      from: "0xServerWallet",
-      to: "0xScoreTokenContract",
-      data: "mint(0xf39Fd..., 100)",
-      gasLimit: "auto",
-      gasPrice: "auto"
-    }
-                │
-                ↓
-  Transaction Hash:
-    "0x123abc...def789"
-                │
-                ↓
-  Posted to PR:
-    "🎉 Settlement Completed!
-     TX Hash: 0x123abc...def789
-     Explorer: https://monad.vision/tx/0x123abc...def789"
-```
+See reusable architecture for settlement internals:
+[x402_workflow/docs/ARCHITECTURE.md](https://github.com/manashatwar/x402_workflow/blob/main/docs/ARCHITECTURE.md)
